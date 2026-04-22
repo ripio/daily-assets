@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load finance_filters %}
+{% block title %}Balance Ripio — Caja Diaria{% endblock %}
+{% block page_title %}Balance Ripio{% endblock %}
+
+{% block content %}
+
+<form method="get" class="date-bar">
+  <div class="date-bar-group">
+    <label class="form-label">Fecha</label>
+    <select name="date" class="form-control" onchange="this.form.submit()">
+      <option value="">-- Seleccionar --</option>
+      {% for d in upload_dates %}
+      <option value="{{ d }}" {% if current_upload and current_upload.date|date:'Y-m-d' == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="date-bar-group">
+    <label class="form-label">Comparar con</label>
+    <select name="compare" class="form-control" onchange="this.form.submit()">
+      <option value="">— Sin comparación —</option>
+      {% for d in upload_dates %}
+      <option value="{{ d }}" {% if compare_upload and compare_upload.date|date:'Y-m-d' == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+
+{% if table %}
+<div class="card table-card">
+  <div class="card-header">Balances Ripio{% if comparing %} — comparando {{ current_upload.date }} vs {{ compare_upload.date }}{% endif %}</div>
+  <div class="table-responsive">
+    <table class="balance-table">
+      <thead>
+        {% if comparing %}
+        <tr>
+          <th rowspan="2" class="col-currency">Currency</th>
+          <th colspan="2" class="th-group-date">{{ current_upload.date }}</th>
+          <th colspan="2" class="th-group-date th-sep">{{ compare_upload.date }}</th>
+          <th colspan="2" class="th-group-var th-sep">Variación</th>
+        </tr>
+        <tr>
+          <th class="text-right col-amount">Amount</th>
+          <th class="text-right col-usd">USD</th>
+          <th class="text-right col-amount th-sep">Amount</th>
+          <th class="text-right col-usd">USD</th>
+          <th class="text-right col-amount th-sep">Var. Cant.</th>
+          <th class="text-right col-usd">Var. Precio</th>
+        </tr>
+        {% else %}
+        <tr>
+          <th class="col-currency">Currency</th>
+          <th class="text-right col-amount">Amount</th>
+          <th class="text-right col-usd">USD</th>
+        </tr>
+        {% endif %}
+      </thead>
+      <tbody>
+        {% for row in table %}
+
+        {% if row.level == 'category' %}
+        <tr class="row-category row-collapsible" onclick="toggleCategory('{{ row.cat_key }}')">
+          <td><span class="collapse-icon" id="icon-cat-{{ row.cat_key }}">▼</span> {{ row.label }}</td>
+          {% if comparing %}
+          <td></td>
+          <td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="th-sep"></td>
+          <td class="text-right">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="th-sep"></td>
+          <td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}
+          <td></td>
+          <td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% elif row.level == 'type' %}
+        <tr class="row-type {% if row.has_children %}row-collapsible{% endif %} {% if row.is_no_liquid %}row-no-liquid{% endif %}"
+            data-cat="{{ row.cat_key }}"
+            {% if row.has_children %}onclick="toggleGroup('{{ row.collapse_key }}')"{% endif %}>
+          <td class="pl-2">
+            {% if row.has_children %}<span class="collapse-icon" id="icon-{{ row.collapse_key }}">▼</span>{% endif %}
+            {{ row.label }}
+          </td>
+          {% if comparing %}
+          <td></td>
+          <td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="th-sep"></td>
+          <td class="text-right">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="th-sep"></td>
+          <td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}
+          <td></td>
+          <td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% elif row.level == 'asset' %}
+        <tr class="row-asset"
+            data-cat="{{ row.cat_key }}"
+            {% if row.collapse_key %}data-parent="{{ row.collapse_key }}"{% endif %}>
+          <td class="pl-4">{{ row.label }}</td>
+          {% if comparing %}
+          <td class="text-right text-muted">{% if row.amount %}{{ row.amount|fmt_num:2 }}{% endif %}</td>
+          <td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="text-right text-muted th-sep">{% if row.amount_prev %}{{ row.amount_prev|fmt_num:2 }}{% endif %}</td>
+          <td class="text-right text-muted">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="text-right th-sep {% if row.var_amount and row.var_amount >= 0 %}text-positive{% elif row.var_amount %}text-negative{% endif %}">
+            {% if row.var_amount %}{{ row.var_amount|fmt_num:2 }}{% endif %}
+          </td>
+          <td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}
+          <td class="text-right text-muted">{% if row.amount %}{{ row.amount|fmt_num:2 }}{% if row.price %} <small>@ {{ row.price|fmt_usd }}</small>{% endif %}{% endif %}</td>
+          <td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif current_upload %}
+<div class="card"><div class="card-body text-muted">No hay datos para mostrar.</div></div>
+{% else %}
+<div class="empty-state">
+  <p>Seleccioná una fecha para ver los balances.</p>
+  {% if user.profile.is_admin %}
+  <a href="{% url 'upload' %}" class="btn btn-primary">Subir CSV</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

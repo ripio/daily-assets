@@ -1,5 +1,5 @@
 from django.urls import path
-from core.views import auth_views, dashboard, upload, usuarios, users
+from core.views import auth_views, dashboard, balance, upload, usuarios, users
 
 urlpatterns = [
     # Auth
@@ -7,8 +7,11 @@ urlpatterns = [
     path('logout/', auth_views.logout_view, name='logout'),
     path('mi-cuenta/', auth_views.change_password_view, name='change_password'),
 
-    # Dashboard
+    # Dashboard (charts)
     path('', dashboard.index, name='dashboard'),
+
+    # Balance Ripio (table)
+    path('balance/', balance.index, name='balance'),
 
     # Upload
     path('upload/', upload.index, name='upload'),

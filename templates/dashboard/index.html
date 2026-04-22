@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard Ripio — Caja Diaria{% endblock %}
-{% block page_title %}Dashboard Ripio{% endblock %}
+{% load finance_filters %}
+{% block title %}Dashboard — Ripio Finance{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -8,128 +9,65 @@
 
 {% block content %}
 
-<!-- Date bar -->
-<form method="get" class="date-bar" id="dateBar">
+<form method="get" class="date-bar">
   <div class="date-bar-group">
     <label class="form-label">Fecha</label>
-    <select name="date" class="form-control" onchange="this.form.submit()" id="dateSelect">
+    <select name="date" class="form-control" onchange="this.form.submit()">
       <option value="">-- Seleccionar --</option>
       {% for d in upload_dates %}
       <option value="{{ d }}" {% if current_upload and current_upload.date|date:'Y-m-d' == d %}selected{% endif %}>{{ d }}</option>
       {% endfor %}
     </select>
   </div>
-  <div class="date-bar-group">
-    <label class="form-label">Comparar con</label>
-    <select name="compare" class="form-control" onchange="this.form.submit()" id="compareSelect">
-      <option value="">-- Sin comparación --</option>
-      {% for d in upload_dates %}
-      <option value="{{ d }}" {% if compare_upload and compare_upload.date|date:'Y-m-d' == d %}selected{% endif %}>{{ d }}</option>
-      {% endfor %}
-    </select>
-  </div>
 </form>
 
-<!-- KPI Cards -->
 {% if current_upload %}
+
 <div class="kpi-grid">
   <div class="kpi-card">
     <div class="kpi-label">Total Ripio (sin No Liquid)</div>
-    <div class="kpi-value">${{ kpi.total_without_no_liquid|floatformat:0 }}</div>
+    <div class="kpi-value">{{ kpi.total_without_no_liquid|fmt_usd }}</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-label">Total Ripio (con No Liquid)</div>
-    <div class="kpi-value kpi-muted">${{ kpi.total_with_no_liquid|floatformat:0 }}</div>
+    <div class="kpi-value kpi-muted">{{ kpi.total_with_no_liquid|fmt_usd }}</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-label">Fecha del reporte</div>
     <div class="kpi-value kpi-date">{{ current_upload.date }}</div>
   </div>
-  {% if compare_upload %}
-  <div class="kpi-card kpi-compare">
-    <div class="kpi-label">Comparando con</div>
-    <div class="kpi-value kpi-date">{{ compare_upload.date }}</div>
+  <div class="kpi-card">
+    <div class="kpi-label">Ver tabla detallada</div>
+    <div class="kpi-value" style="font-size:14px;margin-top:6px;">
+      <a href="{% url 'balance' %}?date={{ current_upload.date }}" class="btn btn-primary btn-sm">Balance Ripio →</a>
+    </div>
   </div>
-  {% endif %}
 </div>
-{% endif %}
 
-<!-- BTC Chart -->
-{% if btc_chart.labels %}
+<!-- Charts row 1: pie charts -->
+<div class="charts-grid">
+  <div class="card chart-card">
+    <div class="card-header">USD por Tipo de Asset</div>
+    <div class="card-body chart-body">
+      <canvas id="typeChart"></canvas>
+    </div>
+  </div>
+  <div class="card chart-card">
+    <div class="card-header">Top Assets (sin No Liquid)</div>
+    <div class="card-body chart-body">
+      <canvas id="assetChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Chart row 2: BTC full width -->
 <div class="card chart-card">
   <div class="card-header">BTC Holdings vs Precio</div>
   <div class="card-body">
-    <canvas id="btcChart" height="100"></canvas>
+    <canvas id="btcChart" height="90"></canvas>
   </div>
 </div>
-{% endif %}
 
-<!-- Balance Table -->
-{% if table %}
-<div class="card table-card">
-  <div class="card-header">Balances Ripio</div>
-  <div class="table-responsive">
-    <table class="balance-table">
-      <thead>
-        <tr>
-          <th>Categoría / Tipo / Asset</th>
-          <th class="text-right">USD</th>
-          {% if comparing %}
-          <th class="text-right">USD anterior</th>
-          <th class="text-right">Var. USD</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in table %}
-        {% if row.level == 'category' %}
-        <tr class="row-category">
-          <td>{{ row.label }}</td>
-          <td class="text-right">{{ row.usd|floatformat:0 }}</td>
-          {% if comparing %}
-          <td class="text-right text-muted">{{ row.usd_prev|floatformat:0 }}</td>
-          <td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">
-            {% if row.var_usd >= 0 %}+{% endif %}{{ row.var_usd|floatformat:0 }}
-          </td>
-          {% endif %}
-        </tr>
-        {% elif row.level == 'type' %}
-        <tr class="row-type {% if row.is_no_liquid %}row-no-liquid{% endif %}">
-          <td class="pl-2">{{ row.label }}</td>
-          <td class="text-right">{{ row.usd|floatformat:0 }}</td>
-          {% if comparing %}
-          <td class="text-right text-muted">{{ row.usd_prev|floatformat:0 }}</td>
-          <td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">
-            {% if row.var_usd >= 0 %}+{% endif %}{{ row.var_usd|floatformat:0 }}
-          </td>
-          {% endif %}
-        </tr>
-        {% elif row.level == 'asset' %}
-        <tr class="row-asset {% if row.is_no_liquid %}row-no-liquid{% endif %}">
-          <td class="pl-4">{{ row.label }}</td>
-          <td class="text-right">
-            {{ row.usd|floatformat:0 }}
-            {% if row.amount %}<br><small class="text-muted">{{ row.amount|floatformat:4 }} @ {% if row.price %}${{ row.price|floatformat:0 }}{% endif %}</small>{% endif %}
-          </td>
-          {% if comparing %}
-          <td class="text-right text-muted">
-            {{ row.usd_prev|floatformat:0 }}
-            {% if row.amount_prev %}<br><small>{{ row.amount_prev|floatformat:4 }}</small>{% endif %}
-          </td>
-          <td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">
-            {% if row.var_usd >= 0 %}+{% endif %}{{ row.var_usd|floatformat:0 }}
-            {% if row.var_amount %}<br><small>{% if row.var_amount >= 0 %}+{% endif %}{{ row.var_amount|floatformat:4 }}</small>{% endif %}
-          </td>
-          {% endif %}
-        </tr>
-        {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% elif current_upload %}
-<div class="card"><div class="card-body text-muted">No hay datos para mostrar.</div></div>
 {% else %}
 <div class="empty-state">
   <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
@@ -143,34 +81,28 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if btc_chart.labels %}
+{% if current_upload %}
 <script>
-const btcData = {{ btc_chart|safe }};
-const ctx = document.getElementById('btcChart').getContext('2d');
-new Chart(ctx, {
+const btcRaw  = {{ btc_chart|safe }};
+const chartRaw = {{ chart_data|safe }};
+
+// --- BTC chart ---
+new Chart(document.getElementById('btcChart').getContext('2d'), {
   type: 'bar',
   data: {
-    labels: btcData.labels,
+    labels: btcRaw.labels,
     datasets: [
       {
-        type: 'bar',
-        label: 'BTC Holdings (₿)',
-        data: btcData.amounts,
-        backgroundColor: 'rgba(61,133,198,0.6)',
-        borderColor: '#3d85c6',
-        borderWidth: 1,
+        type: 'bar', label: 'BTC Holdings (₿)',
+        data: btcRaw.amounts,
+        backgroundColor: 'rgba(61,133,198,0.6)', borderColor: '#3d85c6', borderWidth: 1,
         yAxisID: 'y2',
       },
       {
-        type: 'line',
-        label: 'Precio BTC (USD)',
-        data: btcData.prices,
-        borderColor: '#0b5394',
-        backgroundColor: 'rgba(11,83,148,0.1)',
-        borderWidth: 2,
-        pointRadius: 3,
-        fill: false,
-        tension: 0.3,
+        type: 'line', label: 'Precio BTC (USD)',
+        data: btcRaw.prices,
+        borderColor: '#0b5394', backgroundColor: 'rgba(11,83,148,0.1)',
+        borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3,
         yAxisID: 'y1',
       }
     ]
@@ -180,19 +112,40 @@ new Chart(ctx, {
     interaction: { mode: 'index', intersect: false },
     plugins: { legend: { position: 'top' } },
     scales: {
-      y1: {
-        type: 'linear',
-        position: 'left',
-        title: { display: true, text: 'Precio USD' },
-        ticks: { callback: v => '$' + v.toLocaleString() }
-      },
-      y2: {
-        type: 'linear',
-        position: 'right',
-        title: { display: true, text: '₿ BTC' },
-        grid: { drawOnChartArea: false },
-        ticks: { callback: v => '₿' + v.toFixed(2) }
-      }
+      y1: { type: 'linear', position: 'left', title: { display: true, text: 'Precio USD' }, ticks: { callback: v => '$' + v.toLocaleString() } },
+      y2: { type: 'linear', position: 'right', title: { display: true, text: '₿ BTC' }, grid: { drawOnChartArea: false }, ticks: { callback: v => '₿' + v.toFixed(2) } }
+    }
+  }
+});
+
+// --- Type donut ---
+new Chart(document.getElementById('typeChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: chartRaw.type_labels,
+    datasets: [{ data: chartRaw.type_data, backgroundColor: chartRaw.type_colors, borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 12 }, padding: 14 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.parsed.toLocaleString('en', {maximumFractionDigits:0})}` } }
+    }
+  }
+});
+
+// --- Asset donut ---
+new Chart(document.getElementById('assetChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: chartRaw.asset_labels,
+    datasets: [{ data: chartRaw.asset_data, backgroundColor: chartRaw.asset_colors, borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 12 }, padding: 14 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.parsed.toLocaleString('en', {maximumFractionDigits:0})}` } }
     }
   }
 });
