@@ -65,14 +65,3 @@ Las filas donde `From = 'User'` o `Category = 'User'` son **pasivos de Ripio** (
 
 - **Admin** — puede subir/eliminar CSVs y gestionar usuarios
 - **Viewer** — solo lectura
-
-## Colores
-
-```
-Navy       #0b5394
-Blue mid   #3d85c6
-Blue light #9fc5e8
-Blue pale  #d0e2f3
-Positivo   #27AE60
-Negativo   #C0392B
-```
