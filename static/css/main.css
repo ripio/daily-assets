@@ -354,6 +354,16 @@ body {
   vertical-align: middle;
 }
 
+.row-grand-total td {
+  background: #071f36;
+  color: #fff;
+  font-weight: 900;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 3px solid var(--blue-mid);
+}
+
 .row-category td {
   background: var(--navy);
   color: #fff;
@@ -433,19 +443,43 @@ td.th-sep {
   border-left: 2px solid var(--blue-light) !important;
 }
 
+/* Dashboard top bar (date selector + total inline) */
+.dashboard-topbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.dashboard-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 2px;
+}
+
+.dashboard-total-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-600);
+}
+
+.dashboard-total-value {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--navy);
+  line-height: 1;
+}
+
 /* Dashboard charts grid */
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 20px;
-}
-
-.chart-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 260px;
 }
 
 .pl-2 { padding-left: 28px !important; }

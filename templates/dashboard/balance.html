@@ -58,9 +58,42 @@
       <tbody>
         {% for row in table %}
 
-        {% if row.level == 'category' %}
+        {% if row.level == 'subtotal' %}
+        <tr class="row-subtotal">
+          <td>{{ row.label }}</td>
+          {% if comparing %}
+          <td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}<td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% elif row.level == 'nl_total' %}
+        <tr class="row-nl-total">
+          <td>{{ row.label }}</td>
+          {% if comparing %}
+          <td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}<td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% elif row.level == 'grand_total' %}
+        <tr class="row-grand-total">
+          <td>{{ row.label }}</td>
+          {% if comparing %}
+          <td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}<td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% elif row.level == 'category' %}
         <tr class="row-category row-collapsible" onclick="toggleCategory('{{ row.cat_key }}')">
-          <td><span class="collapse-icon" id="icon-cat-{{ row.cat_key }}">▼</span> {{ row.label }}</td>
+          <td><span class="collapse-icon" id="icon-cat-{{ row.cat_key }}">▶</span> {{ row.label }}</td>
           {% if comparing %}
           <td></td>
           <td class="text-right">{{ row.usd|fmt_usd }}</td>
@@ -77,9 +110,10 @@
         {% elif row.level == 'type' %}
         <tr class="row-type {% if row.has_children %}row-collapsible{% endif %} {% if row.is_no_liquid %}row-no-liquid{% endif %}"
             data-cat="{{ row.cat_key }}"
+            style="display:none"
             {% if row.has_children %}onclick="toggleGroup('{{ row.collapse_key }}')"{% endif %}>
           <td class="pl-2">
-            {% if row.has_children %}<span class="collapse-icon" id="icon-{{ row.collapse_key }}">▼</span>{% endif %}
+            {% if row.has_children %}<span class="collapse-icon" id="icon-{{ row.collapse_key }}">▶</span>{% endif %}
             {{ row.label }}
           </td>
           {% if comparing %}
@@ -98,6 +132,7 @@
         {% elif row.level == 'asset' %}
         <tr class="row-asset"
             data-cat="{{ row.cat_key }}"
+            style="display:none"
             {% if row.collapse_key %}data-parent="{{ row.collapse_key }}"{% endif %}>
           <td class="pl-4">{{ row.label }}</td>
           {% if comparing %}

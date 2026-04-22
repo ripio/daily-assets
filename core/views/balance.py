@@ -75,7 +75,7 @@ def _build_table(upload):
                         'is_no_liquid': False, 'collapse_key': ck, 'cat_key': cat_key,
                     })
 
-        # No Liquid at bottom of category (after all liquid types)
+        # No Liquid dentro de la categoría (collapsable con la cat)
         nl = cat_rows.filter(type__iexact='No Liquid')
         if nl.exists():
             table.append({
@@ -84,6 +84,13 @@ def _build_table(upload):
                 'is_no_liquid': True, 'has_children': False,
                 'collapse_key': '', 'cat_key': cat_key,
             })
+
+    # Filas de resumen global al fondo (siempre visibles)
+    subtotal = rows.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    nl_total = rows.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    table.append({'level': 'subtotal',      'label': 'SUBTOTAL',      'usd': subtotal})
+    table.append({'level': 'nl_total',      'label': 'NO LIQUID',     'usd': nl_total})
+    table.append({'level': 'grand_total',   'label': 'TOTAL GENERAL', 'usd': subtotal + nl_total})
 
     return table
 
@@ -160,7 +167,7 @@ def _build_table_comparison(upload_a, upload_b):
                         'is_no_liquid': False, 'collapse_key': ck, 'cat_key': cat_key,
                     })
 
-        # No Liquid at bottom
+        # No Liquid dentro de la categoría
         nl_a = cat_a.filter(type__iexact='No Liquid')
         nl_b = cat_b.filter(type__iexact='No Liquid')
         if nl_a.exists() or nl_b.exists():
@@ -172,6 +179,17 @@ def _build_table_comparison(upload_a, upload_b):
                 'is_no_liquid': True, 'has_children': False,
                 'collapse_key': '', 'cat_key': cat_key,
             })
+
+    # Resumen global al fondo
+    sub_a = rows_a.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    sub_b = rows_b.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    nl_a_tot = rows_a.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    nl_b_tot = rows_b.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    gt_a = sub_a + nl_a_tot
+    gt_b = sub_b + nl_b_tot
+    table.append({'level': 'subtotal',    'label': 'SUBTOTAL',      'usd': sub_a, 'usd_prev': sub_b, 'var_usd': sub_a - sub_b})
+    table.append({'level': 'nl_total',    'label': 'NO LIQUID',     'usd': nl_a_tot, 'usd_prev': nl_b_tot, 'var_usd': nl_a_tot - nl_b_tot})
+    table.append({'level': 'grand_total', 'label': 'TOTAL GENERAL', 'usd': gt_a, 'usd_prev': gt_b, 'var_usd': gt_a - gt_b})
 
     return table
 

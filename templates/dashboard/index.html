@@ -9,62 +9,47 @@
 
 {% block content %}
 
-<form method="get" class="date-bar">
-  <div class="date-bar-group">
-    <label class="form-label">Fecha</label>
-    <select name="date" class="form-control" onchange="this.form.submit()">
-      <option value="">-- Seleccionar --</option>
-      {% for d in upload_dates %}
-      <option value="{{ d }}" {% if current_upload and current_upload.date|date:'Y-m-d' == d %}selected{% endif %}>{{ d }}</option>
-      {% endfor %}
-    </select>
+<div class="dashboard-topbar">
+  <form method="get" class="date-bar" style="margin-bottom:0;">
+    <div class="date-bar-group">
+      <label class="form-label">Fecha</label>
+      <select name="date" class="form-control" onchange="this.form.submit()">
+        <option value="">-- Seleccionar --</option>
+        {% for d in upload_dates %}
+        <option value="{{ d }}" {% if current_upload and current_upload.date|date:'Y-m-d' == d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+  {% if current_upload %}
+  <div class="dashboard-total">
+    <span class="dashboard-total-label">Total Ripio (sin No Liquid)</span>
+    <span class="dashboard-total-value">{{ kpi.total_without_no_liquid|fmt_usd }}</span>
   </div>
-</form>
+  {% endif %}
+</div>
 
 {% if current_upload %}
 
-<div class="kpi-grid">
-  <div class="kpi-card">
-    <div class="kpi-label">Total Ripio (sin No Liquid)</div>
-    <div class="kpi-value">{{ kpi.total_without_no_liquid|fmt_usd }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Total Ripio (con No Liquid)</div>
-    <div class="kpi-value kpi-muted">{{ kpi.total_with_no_liquid|fmt_usd }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Fecha del reporte</div>
-    <div class="kpi-value kpi-date">{{ current_upload.date }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Ver tabla detallada</div>
-    <div class="kpi-value" style="font-size:14px;margin-top:6px;">
-      <a href="{% url 'balance' %}?date={{ current_upload.date }}" class="btn btn-primary btn-sm">Balance Ripio →</a>
-    </div>
-  </div>
-</div>
-
-<!-- Charts row 1: pie charts -->
 <div class="charts-grid">
-  <div class="card chart-card">
+  <div class="card chart-card" style="max-height:280px;">
     <div class="card-header">USD por Tipo de Asset</div>
-    <div class="card-body chart-body">
+    <div class="card-body" style="padding:10px 14px; height:230px;">
       <canvas id="typeChart"></canvas>
     </div>
   </div>
-  <div class="card chart-card">
+  <div class="card chart-card" style="max-height:280px;">
     <div class="card-header">Top Assets (sin No Liquid)</div>
-    <div class="card-body chart-body">
+    <div class="card-body" style="padding:10px 14px; height:230px;">
       <canvas id="assetChart"></canvas>
     </div>
   </div>
 </div>
 
-<!-- Chart row 2: BTC full width -->
 <div class="card chart-card">
   <div class="card-header">BTC Holdings vs Precio</div>
-  <div class="card-body">
-    <canvas id="btcChart" height="90"></canvas>
+  <div class="card-body" style="padding:12px 20px;">
+    <canvas id="btcChart" height="70"></canvas>
   </div>
 </div>
 
@@ -83,10 +68,10 @@
 {% block extra_js %}
 {% if current_upload %}
 <script>
-const btcRaw  = {{ btc_chart|safe }};
+const btcRaw   = {{ btc_chart|safe }};
 const chartRaw = {{ chart_data|safe }};
 
-// --- BTC chart ---
+// BTC chart
 new Chart(document.getElementById('btcChart').getContext('2d'), {
   type: 'bar',
   data: {
@@ -95,30 +80,30 @@ new Chart(document.getElementById('btcChart').getContext('2d'), {
       {
         type: 'bar', label: 'BTC Holdings (₿)',
         data: btcRaw.amounts,
-        backgroundColor: 'rgba(61,133,198,0.6)', borderColor: '#3d85c6', borderWidth: 1,
-        yAxisID: 'y2',
+        backgroundColor: 'rgba(61,133,198,0.55)', borderColor: '#3d85c6', borderWidth: 1,
+        yAxisID: 'y1',
       },
       {
         type: 'line', label: 'Precio BTC (USD)',
         data: btcRaw.prices,
-        borderColor: '#0b5394', backgroundColor: 'rgba(11,83,148,0.1)',
+        borderColor: '#8e44ad', backgroundColor: 'rgba(142,68,173,0.08)',
         borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3,
-        yAxisID: 'y1',
+        yAxisID: 'y2',
       }
     ]
   },
   options: {
     responsive: true,
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { position: 'top' } },
+    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
     scales: {
-      y1: { type: 'linear', position: 'left', title: { display: true, text: 'Precio USD' }, ticks: { callback: v => '$' + v.toLocaleString() } },
-      y2: { type: 'linear', position: 'right', title: { display: true, text: '₿ BTC' }, grid: { drawOnChartArea: false }, ticks: { callback: v => '₿' + v.toFixed(2) } }
+      y1: { type: 'linear', position: 'left',  ticks: { callback: v => '₿' + v.toFixed(2), font: { size: 10 } }, title: { display: true, text: '₿ Holdings', font: { size: 10 } } },
+      y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } }, title: { display: true, text: 'Precio USD', font: { size: 10 } } }
     }
   }
 });
 
-// --- Type donut ---
+// Type donut
 new Chart(document.getElementById('typeChart').getContext('2d'), {
   type: 'doughnut',
   data: {
@@ -126,26 +111,40 @@ new Chart(document.getElementById('typeChart').getContext('2d'), {
     datasets: [{ data: chartRaw.type_data, backgroundColor: chartRaw.type_colors, borderWidth: 2, borderColor: '#fff' }]
   },
   options: {
-    responsive: true,
+    responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'right', labels: { font: { size: 12 }, padding: 14 } },
+      legend: { position: 'right', labels: { font: { size: 11 }, padding: 10, boxWidth: 12 } },
       tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.parsed.toLocaleString('en', {maximumFractionDigits:0})}` } }
     }
   }
 });
 
-// --- Asset donut ---
+// Top assets — horizontal bar, sorted desc (already sorted from backend)
+const assetLabels = [...chartRaw.asset_labels].reverse();
+const assetData   = [...chartRaw.asset_data].reverse();
+const assetColors = [...chartRaw.asset_colors].reverse();
+
 new Chart(document.getElementById('assetChart').getContext('2d'), {
-  type: 'doughnut',
+  type: 'bar',
   data: {
-    labels: chartRaw.asset_labels,
-    datasets: [{ data: chartRaw.asset_data, backgroundColor: chartRaw.asset_colors, borderWidth: 2, borderColor: '#fff' }]
+    labels: assetLabels,
+    datasets: [{
+      data: assetData,
+      backgroundColor: assetColors,
+      borderWidth: 0,
+      borderRadius: 3,
+    }]
   },
   options: {
-    responsive: true,
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'right', labels: { font: { size: 12 }, padding: 14 } },
-      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.parsed.toLocaleString('en', {maximumFractionDigits:0})}` } }
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` $${ctx.parsed.x.toLocaleString('en', {maximumFractionDigits:0})}` } }
+    },
+    scales: {
+      x: { ticks: { callback: v => '$' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v.toLocaleString()), font: { size: 10 } }, grid: { color: '#e8ecf0' } },
+      y: { ticks: { font: { size: 11 } }, grid: { display: false } }
     }
   }
 });
