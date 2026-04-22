@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Usuarios — Ripio{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Usuarios del sistema</span>
+    <a href="{% url 'users_create' %}" class="btn btn-primary btn-sm">+ Nuevo usuario</a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Último login</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><strong>{{ u.username }}</strong></td>
+          <td>{{ u.get_full_name|default:"—" }}</td>
+          <td>{{ u.email|default:"—" }}</td>
+          <td>
+            <span class="badge {% if u.profile.role == 'admin' or u.is_superuser %}badge-admin{% else %}badge-viewer{% endif %}">
+              {% if u.is_superuser %}Superuser{% else %}{{ u.profile.get_role_display }}{% endif %}
+            </span>
+          </td>
+          <td>
+            <span class="badge {% if u.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+              {% if u.is_active %}Activo{% else %}Inactivo{% endif %}
+            </span>
+          </td>
+          <td>{{ u.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+          <td>
+            <div style="display:flex;gap:4px;">
+              <a href="{% url 'users_edit' u.pk %}" class="btn btn-secondary btn-sm">Editar</a>
+              {% if u != request.user %}
+              <form method="post" action="{% url 'users_toggle' u.pk %}" onsubmit="return confirm('¿{% if u.is_active %}Desactivar{% else %}Activar{% endif %} {{ u.username }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if u.is_active %}btn-warning{% else %}btn-success{% endif %} btn-sm">
+                  {% if u.is_active %}Desactivar{% else %}Activar{% endif %}
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted">No hay usuarios.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

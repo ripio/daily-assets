@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Editar Usuario — Ripio{% endblock %}
+{% block page_title %}Editar Usuario{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:520px;">
+  <div class="card-header">Editar: <strong>{{ target.username }}</strong></div>
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-error">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          {{ form.first_name }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellido</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        {{ form.email }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rol</label>
+        {{ form.role }}
+      </div>
+      <hr class="form-divider">
+      <p class="form-hint">Dejá en blanco para no cambiar la contraseña.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nueva contraseña</label>
+          {{ form.new_password }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar contraseña</label>
+          {{ form.new_password_confirm }}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a href="{% url 'users_list' %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

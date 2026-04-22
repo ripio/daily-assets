@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Subir CSV — Ripio{% endblock %}
+{% block page_title %}Subir CSV{% endblock %}
+
+{% block content %}
+
+{% if pending_replace %}
+<!-- Confirmation dialog -->
+<div class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">Confirmar reemplazo</div>
+    <div class="modal-body">
+      <p>Ya existe un upload para <strong>{{ pending_replace.date }}</strong> con {{ pending_replace.row_count }} filas.</p>
+      <p>¿Querés reemplazarlo con el nuevo archivo?</p>
+    </div>
+    <div class="modal-footer">
+      <form method="post" action="{% url 'confirm_replace' pending_replace.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ pending_replace.date }}">
+        <input type="file" name="file" accept=".csv" required style="margin-bottom:8px; display:block;">
+        <button type="submit" class="btn btn-danger">Sí, reemplazar</button>
+        <a href="{% url 'upload' %}" class="btn btn-secondary">Cancelar</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="two-col-layout">
+  <!-- Upload form -->
+  <div class="card">
+    <div class="card-header">Nuevo upload</div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="form-group">
+          <label class="form-label">Fecha del reporte</label>
+          {{ form.date }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Archivo CSV</label>
+          {{ form.file }}
+        </div>
+        <button type="submit" class="btn btn-primary">Subir y procesar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Uploads list -->
+  <div class="card">
+    <div class="card-header">Uploads cargados</div>
+    {% if uploads %}
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Filas</th>
+            <th>Subido por</th>
+            <th>Fecha upload</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for up in uploads %}
+          <tr>
+            <td><strong>{{ up.date }}</strong></td>
+            <td>{{ up.row_count }}</td>
+            <td>{{ up.uploaded_by.username|default:"—" }}</td>
+            <td>{{ up.uploaded_at|date:"d/m/Y H:i" }}</td>
+            <td>
+              <form method="post" action="{% url 'delete_upload' up.pk %}" onsubmit="return confirm('¿Eliminar upload del {{ up.date }}? Esta acción no se puede deshacer.')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body text-muted">No hay uploads cargados.</div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
