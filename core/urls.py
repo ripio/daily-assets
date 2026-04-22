@@ -1,5 +1,5 @@
 from django.urls import path
-from core.views import auth_views, dashboard, balance, upload, usuarios, users
+from core.views import auth_views, dashboard, balance, upload, users
 
 urlpatterns = [
     # Auth
@@ -17,9 +17,6 @@ urlpatterns = [
     path('upload/', upload.index, name='upload'),
     path('upload/delete/<int:pk>/', upload.delete_upload, name='delete_upload'),
     path('upload/confirm/<int:pk>/', upload.confirm_replace, name='confirm_replace'),
-
-    # Usuarios (user balances)
-    path('usuarios/', usuarios.index, name='usuarios'),
 
     # User management (admin only)
     path('users/', users.list_users, name='users_list'),
