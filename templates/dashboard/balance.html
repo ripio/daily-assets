@@ -104,7 +104,7 @@
 
         {% elif row.level == 'category' %}
         <tr class="row-category row-collapsible" onclick="toggleCategory('{{ row.cat_key }}')">
-          <td><span class="collapse-icon" id="icon-cat-{{ row.cat_key }}">▶</span> {{ row.label }}</td>
+          <td><span class="collapse-icon" id="icon-cat-{{ row.cat_key }}">▼</span> {{ row.label }}</td>
           {% if comparing %}
           <td></td>
           <td class="text-right">{{ row.usd|fmt_usd }}</td>
@@ -121,7 +121,6 @@
         {% elif row.level == 'type' %}
         <tr class="row-type {% if row.has_children %}row-collapsible{% endif %} {% if row.is_no_liquid %}row-no-liquid{% endif %}"
             data-cat="{{ row.cat_key }}"
-            style="display:none"
             {% if row.has_children %}onclick="toggleGroup('{{ row.collapse_key }}')"{% endif %}>
           <td class="pl-2">
             {% if row.has_children %}<span class="collapse-icon" id="icon-{{ row.collapse_key }}">▶</span>{% endif %}
