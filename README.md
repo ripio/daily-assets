@@ -32,9 +32,8 @@ daily-assets/
 
 | URL | Descripción | Acceso |
 |-----|-------------|--------|
-| `/` | Dashboard — KPIs, gráfico BTC, donut por tipo y asset | Todos |
+| `/Dashboard/` | Dashboard — KPIs, gráfico BTC, donut por tipo y asset | Todos |
 | `/balance/` | Tabla de balances Ripio con modo comparación | Todos |
-| `/usuarios/` | Balances de usuarios (pasivos) | Todos |
 | `/upload/` | Subir / reemplazar / eliminar CSVs | Admin |
 | `/users/` | Gestión de usuarios del sistema | Admin |
 | `/mi-cuenta/` | Cambio de contraseña | Todos |
@@ -49,7 +48,7 @@ Columnas requeridas: `Workspace`, `Account Name`, `Account ID`, `Asset`, `Total 
 
 ### Regla clave — Ripio vs Usuarios
 
-Las filas donde `From = 'User'` o `Category = 'User'` son **pasivos de Ripio** (balances de usuarios) y se muestran **exclusivamente** en `/usuarios/`. El resto son posiciones propias de Ripio y se muestran en `/balance/` y `/`.
+Las filas donde `From = 'User'` o `Category = 'User'` son **pasivos de Ripio** (balances de usuarios) y no se muestran. El resto son posiciones propias de Ripio y se muestran en `/balance/` y `/Dashboard/`.
 
 ### Tipos de asset
 
