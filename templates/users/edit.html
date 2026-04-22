@@ -25,10 +25,18 @@
         <label class="form-label">Email</label>
         {{ form.email }}
       </div>
+      {% if is_self %}
+      <div class="form-group">
+        <label class="form-label">Rol</label>
+        <input type="text" class="form-control" value="{{ form.role.value }}" disabled>
+        <small class="form-hint">No podés cambiar tu propio rol.</small>
+      </div>
+      {% else %}
       <div class="form-group">
         <label class="form-label">Rol</label>
         {{ form.role }}
       </div>
+      {% endif %}
       <hr class="form-divider">
       <p class="form-hint">Dejá en blanco para no cambiar la contraseña.</p>
       <div class="form-row">

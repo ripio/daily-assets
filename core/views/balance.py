@@ -75,16 +75,6 @@ def _build_table(upload):
                         'is_no_liquid': False, 'collapse_key': ck, 'cat_key': cat_key,
                     })
 
-        # No Liquid dentro de la categoría (collapsable con la cat)
-        nl = cat_rows.filter(type__iexact='No Liquid')
-        if nl.exists():
-            table.append({
-                'level': 'type', 'label': 'NO LIQUID',
-                'usd': nl.aggregate(t=Sum('usd'))['t'] or Decimal('0'),
-                'is_no_liquid': True, 'has_children': False,
-                'collapse_key': '', 'cat_key': cat_key,
-            })
-
     # Filas de resumen global al fondo (siempre visibles)
     subtotal = rows.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
     nl_total = rows.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
@@ -166,19 +156,6 @@ def _build_table_comparison(upload_a, upload_b):
                         'price': None, 'price_prev': None,
                         'is_no_liquid': False, 'collapse_key': ck, 'cat_key': cat_key,
                     })
-
-        # No Liquid dentro de la categoría
-        nl_a = cat_a.filter(type__iexact='No Liquid')
-        nl_b = cat_b.filter(type__iexact='No Liquid')
-        if nl_a.exists() or nl_b.exists():
-            nl_usd_a = nl_a.aggregate(t=Sum('usd'))['t'] or Decimal('0')
-            nl_usd_b = nl_b.aggregate(t=Sum('usd'))['t'] or Decimal('0')
-            table.append({
-                'level': 'type', 'label': 'NO LIQUID',
-                'usd': nl_usd_a, 'usd_prev': nl_usd_b, 'var_usd': nl_usd_a - nl_usd_b,
-                'is_no_liquid': True, 'has_children': False,
-                'collapse_key': '', 'cat_key': cat_key,
-            })
 
     # Resumen global al fondo
     sub_a = rows_a.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')

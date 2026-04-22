@@ -53,6 +53,7 @@ def edit_user(request, pk):
         messages.error(request, 'Acceso restringido a administradores.')
         return redirect('dashboard')
     target = get_object_or_404(User, pk=pk)
+    is_self = target == request.user
     profile, _ = UserProfile.objects.get_or_create(user=target)
     initial = {
         'email': target.email,
@@ -69,14 +70,15 @@ def edit_user(request, pk):
             target.first_name = d.get('first_name', '')
             target.last_name = d.get('last_name', '')
             target.save()
-            profile.role = d['role']
-            profile.save()
+            if not is_self:
+                profile.role = d['role']
+                profile.save()
             if d.get('new_password'):
                 target.set_password(d['new_password'])
                 target.save()
             messages.success(request, f'Usuario {target.username} actualizado.')
             return redirect('users_list')
-    return render(request, 'users/edit.html', {'form': form, 'target': target})
+    return render(request, 'users/edit.html', {'form': form, 'target': target, 'is_self': is_self})
 
 
 @login_required
