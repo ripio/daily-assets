@@ -9,25 +9,6 @@ Sistema web interno para visualizar y analizar la caja diaria de Ripio. Se sube 
 - **DB:** SQLite (migrable a PostgreSQL)
 - **Auth:** Django auth con gestión propia (sin Django admin)
 
-## Setup
-
-```bash
-python3 -m venv venv
-source venv/bin/activate        # Mac/Linux
-# venv\Scripts\activate         # Windows
-
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-Crear superusuario inicial:
-```bash
-python manage.py createsuperuser
-```
-
-Acceder en `http://127.0.0.1:8000/`
-
 ## Estructura del proyecto
 
 ```
