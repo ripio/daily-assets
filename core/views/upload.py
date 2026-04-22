@@ -16,6 +16,10 @@ EXPECTED_COLUMNS = {
     'Total Balance', 'From', 'Category', 'Type', 'Asset Group', 'Price', 'USD'
 }
 
+TYPE_NORMALIZE = {
+    'crypto crypto': 'Crypto',
+}
+
 
 def _require_admin(request):
     if not request.user.is_authenticated:
@@ -59,7 +63,7 @@ def _parse_csv(file_obj):
             'total_balance': _clean_decimal(row.get('Total Balance')),
             'from_field': row.get('From', '').strip(),
             'category': row.get('Category', '').strip(),
-            'type': row.get('Type', '').strip(),
+            'type': TYPE_NORMALIZE.get(row.get('Type', '').strip().lower(), row.get('Type', '').strip()),
             'asset_group': row.get('Asset Group', '').strip(),
             'price': _clean_decimal(row.get('Price')),
             'usd': _clean_decimal(row.get('USD')),

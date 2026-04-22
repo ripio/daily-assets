@@ -70,8 +70,19 @@
         </tr>
 
         {% elif row.level == 'nl_total' %}
-        <tr class="row-nl-total">
-          <td>{{ row.label }}</td>
+        <tr class="row-nl-total {% if row.has_children %}row-collapsible{% endif %}" {% if row.has_children %}onclick="toggleNL()"{% endif %}>
+          <td><span class="collapse-icon" id="icon-nl-total">{% if row.has_children %}▶{% endif %}</span> {{ row.label }}</td>
+          {% if comparing %}
+          <td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right">{{ row.usd_prev|fmt_usd }}</td>
+          <td class="th-sep"></td><td class="text-right {% if row.var_usd >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ row.var_usd|fmt_var }}</td>
+          {% else %}<td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
+          {% endif %}
+        </tr>
+
+        {% elif row.level == 'nl_category' %}
+        <tr class="row-nl-category" style="display:none">
+          <td class="pl-2">{{ row.label }}</td>
           {% if comparing %}
           <td></td><td class="text-right">{{ row.usd|fmt_usd }}</td>
           <td class="th-sep"></td><td class="text-right">{{ row.usd_prev|fmt_usd }}</td>

@@ -77,10 +77,15 @@ def _build_table(upload):
 
     # Filas de resumen global al fondo (siempre visibles)
     subtotal = rows.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
-    nl_total = rows.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
-    table.append({'level': 'subtotal',      'label': 'SUBTOTAL',      'usd': subtotal})
-    table.append({'level': 'nl_total',      'label': 'NO LIQUID',     'usd': nl_total})
-    table.append({'level': 'grand_total',   'label': 'TOTAL GENERAL', 'usd': subtotal + nl_total})
+    nl_rows = rows.filter(type__iexact='No Liquid')
+    nl_total = nl_rows.aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    nl_by_cat = list(nl_rows.values('category').annotate(t=Sum('usd')).order_by('category'))
+
+    table.append({'level': 'subtotal',    'label': 'SUBTOTAL',      'usd': subtotal})
+    table.append({'level': 'nl_total',    'label': 'NO LIQUID',     'usd': nl_total, 'has_children': bool(nl_by_cat)})
+    for r in nl_by_cat:
+        table.append({'level': 'nl_category', 'label': r['category'] or 'Other', 'usd': r['t'] or Decimal('0')})
+    table.append({'level': 'grand_total', 'label': 'TOTAL GENERAL', 'usd': subtotal + nl_total})
 
     return table
 
@@ -160,12 +165,25 @@ def _build_table_comparison(upload_a, upload_b):
     # Resumen global al fondo
     sub_a = rows_a.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
     sub_b = rows_b.exclude(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
-    nl_a_tot = rows_a.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
-    nl_b_tot = rows_b.filter(type__iexact='No Liquid').aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    nl_rows_a = rows_a.filter(type__iexact='No Liquid')
+    nl_rows_b = rows_b.filter(type__iexact='No Liquid')
+    nl_a_tot = nl_rows_a.aggregate(t=Sum('usd'))['t'] or Decimal('0')
+    nl_b_tot = nl_rows_b.aggregate(t=Sum('usd'))['t'] or Decimal('0')
     gt_a = sub_a + nl_a_tot
     gt_b = sub_b + nl_b_tot
+
+    # NO LIQUID by category (union of both dates)
+    nl_cats_a = {r['category']: r['t'] for r in nl_rows_a.values('category').annotate(t=Sum('usd'))}
+    nl_cats_b = {r['category']: r['t'] for r in nl_rows_b.values('category').annotate(t=Sum('usd'))}
+    nl_all_cats = sorted(set(list(nl_cats_a.keys()) + list(nl_cats_b.keys())))
+    has_nl_children = bool(nl_all_cats)
+
     table.append({'level': 'subtotal',    'label': 'SUBTOTAL',      'usd': sub_a, 'usd_prev': sub_b, 'var_usd': sub_a - sub_b})
-    table.append({'level': 'nl_total',    'label': 'NO LIQUID',     'usd': nl_a_tot, 'usd_prev': nl_b_tot, 'var_usd': nl_a_tot - nl_b_tot})
+    table.append({'level': 'nl_total',    'label': 'NO LIQUID',     'usd': nl_a_tot, 'usd_prev': nl_b_tot, 'var_usd': nl_a_tot - nl_b_tot, 'has_children': has_nl_children})
+    for cat in nl_all_cats:
+        usd_a = float(nl_cats_a.get(cat) or 0)
+        usd_b = float(nl_cats_b.get(cat) or 0)
+        table.append({'level': 'nl_category', 'label': cat or 'Other', 'usd': Decimal(str(usd_a)), 'usd_prev': Decimal(str(usd_b)), 'var_usd': Decimal(str(usd_a - usd_b))})
     table.append({'level': 'grand_total', 'label': 'TOTAL GENERAL', 'usd': gt_a, 'usd_prev': gt_b, 'var_usd': gt_a - gt_b})
 
     return table

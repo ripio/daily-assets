@@ -5,6 +5,7 @@
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -47,7 +48,7 @@
 </div>
 
 <div class="card chart-card">
-  <div class="card-header">BTC Holdings vs Precio</div>
+  <div class="card-header">Holdings por Tipo vs Precio BTC</div>
   <div class="card-body" style="padding:12px 20px;">
     <canvas id="btcChart" height="70"></canvas>
   </div>
@@ -71,34 +72,53 @@
 const btcRaw   = {{ btc_chart|safe }};
 const chartRaw = {{ chart_data|safe }};
 
-// BTC chart
+const fmtBtcM = v => '$' + (v / 1e6).toFixed(1) + 'M';
+const fmtBtcK = v => '$' + (v / 1e3).toFixed(0) + 'k';
+
+// Portfolio stacked bars by type + BTC price line
+const typeDatasets = btcRaw.series.map(s => ({
+  type: 'bar', label: s.label,
+  data: s.data,
+  backgroundColor: s.color,
+  borderWidth: 0, borderRadius: 2,
+  yAxisID: 'y1', stack: 'portfolio',
+  datalabels: { display: false },
+}));
+
+typeDatasets.push({
+  type: 'line', label: 'Precio BTC (USD)',
+  data: btcRaw.prices,
+  borderColor: '#8e44ad', backgroundColor: 'rgba(142,68,173,0.08)',
+  borderWidth: 2, pointRadius: 4, fill: false, tension: 0.3,
+  yAxisID: 'y2',
+  datalabels: {
+    anchor: 'top', align: 'top',
+    formatter: fmtBtcK,
+    font: { size: 10 }, color: '#8e44ad',
+  },
+});
+
 new Chart(document.getElementById('btcChart').getContext('2d'), {
   type: 'bar',
-  data: {
-    labels: btcRaw.labels,
-    datasets: [
-      {
-        type: 'bar', label: 'BTC Holdings (₿)',
-        data: btcRaw.amounts,
-        backgroundColor: 'rgba(61,133,198,0.55)', borderColor: '#3d85c6', borderWidth: 1,
-        yAxisID: 'y1',
-      },
-      {
-        type: 'line', label: 'Precio BTC (USD)',
-        data: btcRaw.prices,
-        borderColor: '#8e44ad', backgroundColor: 'rgba(142,68,173,0.08)',
-        borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3,
-        yAxisID: 'y2',
-      }
-    ]
-  },
+  data: { labels: btcRaw.labels, datasets: typeDatasets },
   options: {
     responsive: true,
     interaction: { mode: 'index', intersect: false },
-    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 11 } } },
+      datalabels: { display: true },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            if (ctx.dataset.yAxisID === 'y2') return ` Precio BTC: ${fmtBtcK(ctx.parsed.y)}`;
+            return ` ${ctx.dataset.label}: ${fmtBtcM(ctx.parsed.y)}`;
+          }
+        }
+      },
+    },
     scales: {
-      y1: { type: 'linear', position: 'left',  ticks: { callback: v => '₿' + v.toFixed(2), font: { size: 10 } }, title: { display: true, text: '₿ Holdings', font: { size: 10 } } },
-      y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } }, title: { display: true, text: 'Precio USD', font: { size: 10 } } }
+      y1: { type: 'linear', position: 'left', stacked: true, ticks: { callback: fmtBtcM, font: { size: 10 } }, title: { display: true, text: 'USD', font: { size: 10 } } },
+      y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: fmtBtcK, font: { size: 10 } }, title: { display: true, text: 'Precio BTC', font: { size: 10 } } }
     }
   }
 });
@@ -119,18 +139,16 @@ new Chart(document.getElementById('typeChart').getContext('2d'), {
   }
 });
 
-// Top assets — horizontal bar, sorted desc (already sorted from backend)
-const assetLabels = [...chartRaw.asset_labels].reverse();
-const assetData   = [...chartRaw.asset_data].reverse();
-const assetColors = [...chartRaw.asset_colors].reverse();
+// Top assets — horizontal bar, largest at top (backend sends desc, no reverse needed)
+const fmtM = v => '$' + (v / 1e6).toFixed(1) + 'M';
 
 new Chart(document.getElementById('assetChart').getContext('2d'), {
   type: 'bar',
   data: {
-    labels: assetLabels,
+    labels: chartRaw.asset_labels,
     datasets: [{
-      data: assetData,
-      backgroundColor: assetColors,
+      data: chartRaw.asset_data,
+      backgroundColor: chartRaw.asset_colors,
       borderWidth: 0,
       borderRadius: 3,
     }]
@@ -140,10 +158,10 @@ new Chart(document.getElementById('assetChart').getContext('2d'), {
     responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: { callbacks: { label: ctx => ` $${ctx.parsed.x.toLocaleString('en', {maximumFractionDigits:0})}` } }
+      tooltip: { callbacks: { label: ctx => ` ${fmtM(ctx.parsed.x)}` } }
     },
     scales: {
-      x: { ticks: { callback: v => '$' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v.toLocaleString()), font: { size: 10 } }, grid: { color: '#e8ecf0' } },
+      x: { ticks: { callback: fmtM, font: { size: 10 } }, grid: { color: '#e8ecf0' } },
       y: { ticks: { font: { size: 11 } }, grid: { display: false } }
     }
   }

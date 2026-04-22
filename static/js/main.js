@@ -48,6 +48,16 @@ function toggleCategory(catKey) {
   }
 }
 
+// Collapse/expand NO LIQUID category breakdown
+function toggleNL() {
+  const rows = document.querySelectorAll('.row-nl-category');
+  const icon = document.getElementById('icon-nl-total');
+  if (!rows.length) return;
+  const isOpen = rows[0].style.display !== 'none';
+  rows.forEach(r => { r.style.display = isOpen ? 'none' : ''; });
+  if (icon) icon.textContent = isOpen ? '▶' : '▼';
+}
+
 // Auto-dismiss alerts after 6 seconds
 document.querySelectorAll('.alert').forEach(alert => {
   setTimeout(() => {
